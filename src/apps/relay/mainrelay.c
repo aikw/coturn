@@ -145,7 +145,8 @@ TURN_CREDENTIALS_NONE, /* ct */
 ///////////// Users DB //////////////
 { (TURN_USERDB_TYPE)0, {"\0"}, {0,NULL, {NULL,0}} },
 ///////////// CPUs //////////////////
-DEFAULT_CPUS_NUMBER
+DEFAULT_CPUS_NUMBER,
+0
 };
 
 //////////////// OpenSSL Init //////////////////////
@@ -740,7 +741,8 @@ enum EXTRA_OPTS {
 	ADMIN_TOTAL_QUOTA_OPT,
 	ADMIN_USER_QUOTA_OPT,
 	SERVER_NAME_OPT,
-	OAUTH_OPT
+	OAUTH_OPT,
+	RAUTH_OPT
 };
 
 struct myoption {
@@ -796,6 +798,7 @@ static const struct myoption long_options[] = {
 				{ "realm", required_argument, NULL, 'r' },
 				{ "server-name", required_argument, NULL, SERVER_NAME_OPT },
 				{ "oauth", optional_argument, NULL, OAUTH_OPT },
+				{ "rauth", optional_argument, NULL, RAUTH_OPT },
 				{ "user-quota", required_argument, NULL, 'q' },
 				{ "total-quota", required_argument, NULL, 'Q' },
 				{ "max-bps", required_argument, NULL, 's' },
@@ -941,6 +944,9 @@ static void set_option(int c, char *value)
 	  } else {
 		  turn_params.oauth = get_bool_value(value);
 	  }
+	  break;
+  case RAUTH_OPT:
+	  turn_params.rauth = get_bool_value(value);
 	  break;
   case NO_SSLV2_OPT:
     //deprecated

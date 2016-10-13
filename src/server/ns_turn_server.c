@@ -4812,7 +4812,7 @@ void init_turn_server(turn_turnserver* server,
 		send_turn_session_info_cb send_turn_session_info,
 		send_https_socket_cb send_https_socket,
 		allocate_bps_cb allocate_bps_func,
-		int oauth, const char* oauth_server_name) {
+		int oauth, vintp rauth, const char* oauth_server_name) {
 
 	if (!server)
 		return;
@@ -4837,6 +4837,7 @@ void init_turn_server(turn_turnserver* server,
 	server->send_turn_session_info = send_turn_session_info;
 	server->send_https_socket = send_https_socket;
 	server->oauth = oauth;
+	server->rauth = rauth;
 	if(oauth)
 		server->oauth_server_name = oauth_server_name;
 	if(mobility)

@@ -430,7 +430,11 @@ static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key) {
 	redisContext * rc = get_redis_connection();
 	if(rc) {
 		char s[TURN_LONG_STRING_SIZE];
-		snprintf(s,sizeof(s),"get turn/realm/%s/user/%s/key", (char*)realm, usname);
+		if (turn_params.rauth) {
+			snprintf(s,sizeof(s),"get %s/user/%s/token", (char*)realm, usname);
+		} else {
+			snprintf(s,sizeof(s),"get turn/realm/%s/user/%s/key", (char*)realm, usname);
+		}
 		redisReply *rget = (redisReply *)redisCommand(rc, s);
 		if(rget) {
 			if (rget->type == REDIS_REPLY_ERROR)
@@ -439,14 +443,22 @@ static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key) {
 				if (rget->type != REDIS_REPLY_NIL)
 					TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Unexpected type: %d\n", rget->type);
 			} else {
-				size_t sz = get_hmackey_size(SHATYPE_DEFAULT);
-				if(strlen(rget->str)<sz*2) {
-					TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key format: %s, user %s\n",rget->str,usname);
-				} else if(convert_string_key_to_binary(rget->str, key, sz)<0) {
-					TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key: %s, user %s\n",rget->str,usname);
+				if (turn_params.rauth) {
+					if(stun_produce_integrity_key_str(usname, realm, (u08bits*)rget->str, key, SHATYPE_DEFAULT)<0){
+						TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key: %s, user %s\n",rget->str,usname);
+					} else {
+						ret = 0;
+					}
 				} else {
-					ret = 0;
-				}
+					size_t sz = get_hmackey_size(SHATYPE_DEFAULT);
+					if(strlen(rget->str)<sz*2) {
+						TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key format: %s, user %s\n",rget->str,usname);
+					} else if(convert_string_key_to_binary(rget->str, key, sz)<0) {
+						TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key: %s, user %s\n",rget->str,usname);
+					} else {
+						ret = 0;
+					}
+				}				
 			}
 			turnFreeRedisReply(rget);
 		}

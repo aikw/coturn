@@ -168,6 +168,8 @@ struct _turn_turnserver {
 	/* oAuth: */
 	int oauth;
 	const char* oauth_server_name;
+
+	vintp rauth;
 };
 
 ///////////////////////////////////////////
@@ -207,7 +209,7 @@ void init_turn_server(turn_turnserver* server,
 				    send_turn_session_info_cb send_turn_session_info,
 				    send_https_socket_cb send_https_socket,
 				    allocate_bps_cb allocate_bps_func,
-				    int oauth,
+				    int oauth, vintp rauth,
 				    const char* oauth_server_name);
 
 ioa_engine_handle turn_server_get_engine(turn_turnserver *s);

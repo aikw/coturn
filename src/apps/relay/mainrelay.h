@@ -305,6 +305,8 @@ typedef struct _turn_params_ {
 
   unsigned long cpus;
 
+  vint rauth;
+
 } turn_params_t;
 
 extern turn_params_t turn_params;
