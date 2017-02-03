@@ -521,12 +521,19 @@ int vrtpprintf(TURN_LOG_LEVEL level, const char *format, va_list args)
 	vsnprintf(s+sz, sizeof(s)-1-sz, format, args);
 	s[sizeof(s)-1]=0;
 
+char str_utc[26];
+time_t now_time;
+struct tm now_tm_utc;
+time(&now_time);
+gmtime_r(&now_time, &now_tm_utc);
+strftime(str_utc, 26, "%FT%TZ", &now_tm_utc); // "%FT%TZ%z"
+
 	if(to_syslog) {
 		syslog(get_syslog_level(level),"%s",s);
 	} else {
 		log_lock();
 		set_rtpfile();
-		if(fprintf(_rtpfile,"%s",s)<0) {
+		if(fprintf(_rtpfile,"%s %s",str_utc, s)<0) {
 			reset_rtpprintf();
 		} else if(fflush(_rtpfile)<0) {
 			reset_rtpprintf();
@@ -785,7 +792,7 @@ void tm_print_func(void) {
   }
   printf("=============================================\n");
   pthread_mutex_unlock(&tm);
-} 
+}
 
 extern "C" void *turn_malloc_func(size_t sz, const char* function, int line);
 void *turn_malloc_func(size_t sz, const char* function, int line) {
@@ -793,7 +800,7 @@ void *turn_malloc_func(size_t sz, const char* function, int line) {
   TM_START();
 
   void *ptr = malloc(sz);
-  
+
   add_tm_ptr(ptr,id);
 
   return ptr;
@@ -840,7 +847,7 @@ void turn_free_simple(void *ptr) {
 
 extern "C" void *turn_calloc_func(size_t number, size_t size, const char* function, int line);
 void *turn_calloc_func(size_t number, size_t size, const char* function, int line) {
-  
+
   TM_START();
 
   void *ptr = calloc(number,size);
