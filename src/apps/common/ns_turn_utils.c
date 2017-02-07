@@ -232,6 +232,7 @@ void addr_debug_print(int verbose, const ioa_addr *addr, const s08bits* s)
 #define FILE_STR_LEN (1025)
 
 static FILE* _rtpfile = NULL;
+static FILE* _rtpfile_r = NULL; // r
 static int to_syslog = 0;
 static int simple_log = 0;
 static char log_fn[FILE_STR_LEN]="\0";
@@ -279,9 +280,12 @@ void reset_rtpprintf(void)
 {
 	log_lock();
 	if(_rtpfile) {
-		if(_rtpfile != stdout)
+		if(_rtpfile != stdout) {
 			fclose(_rtpfile);
+if (_rtpfile_r && _rtpfile_r != stdout) fclose(_rtpfile_r); // r
+    }
 		_rtpfile = NULL;
+_rtpfile_r = NULL; // r
 	}
 	log_unlock();
 }
@@ -345,6 +349,7 @@ static void set_log_file_name_func(char *base, char *f, size_t fsz)
 static void sighup_callback_handler(int signum)
 {
 	if(signum == SIGHUP) {
+TURN_LOG_FUNC(TURN_LOG_LEVEL_R, "sighup received!!!\n"); // r
 		to_reset_log_file = 1;
 	}
 }
@@ -356,6 +361,8 @@ static void set_rtpfile(void)
 		reset_rtpprintf();
 		to_reset_log_file = 0;
 	}
+
+char log_fn_r[FILE_STR_LEN]; // r
 
 	if(to_syslog) {
 		return;
@@ -370,12 +377,19 @@ static void set_rtpfile(void)
 				no_stdout_log = 1;
 			} else {
 				set_log_file_name(log_fn_base,log_fn);
-				_rtpfile = fopen(log_fn, "w");
-				if(_rtpfile)
-					TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", log_fn);
+        _rtpfile = fopen(log_fn, "w");
+				if(_rtpfile) {
+          TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", log_fn);
+// r >>
+snprintf(log_fn_r, FILE_STR_LEN, "%s2.log", log_fn);
+_rtpfile_r = fopen(log_fn_r, "w");
+if (!_rtpfile_r) fprintf(stderr,"ERROR: Cannot open log file for writing: %s\n",log_fn_r);
+else TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", log_fn_r);
+// r <<
+        }
 			}
-			if (!_rtpfile) {
-				fprintf(stderr,"ERROR: Cannot open log file for writing: %s\n",log_fn);
+      if (!_rtpfile) {
+        fprintf(stderr,"ERROR: Cannot open log file for writing: %s\n",log_fn);
 			} else {
 				return;
 			}
@@ -384,7 +398,7 @@ static void set_rtpfile(void)
 
 	if(!_rtpfile) {
 
-		char logbase[FILE_STR_LEN];
+    char logbase[FILE_STR_LEN];
 		char logtail[FILE_STR_LEN];
 		char logf[FILE_STR_LEN];
 
@@ -401,12 +415,20 @@ static void set_rtpfile(void)
 		if(_rtpfile)
 			TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", logf);
 		else {
-			snprintf(logbase, FILE_STR_LEN, "/var/log/%s", logtail);
+      snprintf(logbase, FILE_STR_LEN, "/var/log/%s", logtail);
 
 			set_log_file_name(logbase, logf);
-			_rtpfile = fopen(logf, "w");
-			if(_rtpfile)
-				TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", logf);
+      _rtpfile = fopen(logf, "w");
+      if(_rtpfile)
+        TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", logf);
+// r >>
+if (simple_log) { // must be simple_log on!!!
+  snprintf(log_fn_r, FILE_STR_LEN, "%s2.log", logf);
+  _rtpfile_r = fopen(log_fn_r, "w");
+ if(_rtpfile_r) TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO, "log file opened: %s\n", log_fn_r);
+ else _rtpfile_r = stdout;
+ }
+// r <<
 			else {
 				snprintf(logbase, FILE_STR_LEN, "/var/tmp/%s", logtail);
 				set_log_file_name(logbase, logf);
@@ -516,30 +538,38 @@ int vrtpprintf(TURN_LOG_LEVEL level, const char *format, va_list args)
 
 	size_t sz;
 
-	snprintf(s, sizeof(s), "%lu: ",(unsigned long)log_time());
-	sz=strlen(s);
-	vsnprintf(s+sz, sizeof(s)-1-sz, format, args);
-	s[sizeof(s)-1]=0;
-
+// r >>
+if (level == TURN_LOG_LEVEL_R){
 char str_utc[26];
 time_t now_time;
 struct tm now_tm_utc;
 time(&now_time);
 gmtime_r(&now_time, &now_tm_utc);
 strftime(str_utc, 26, "%FT%TZ", &now_tm_utc); // "%FT%TZ%z"
+snprintf(s, sizeof(s), "%s ", str_utc);
+} else snprintf(s, sizeof(s), "%lu: ",(unsigned long)log_time());
+// snprintf(s, sizeof(s), "%lu: ",(unsigned long)log_time());
+// r <<
+	sz=strlen(s);
+	vsnprintf(s+sz, sizeof(s)-1-sz, format, args);
+	s[sizeof(s)-1]=0;
 
 	if(to_syslog) {
 		syslog(get_syslog_level(level),"%s",s);
-	} else {
-		log_lock();
-		set_rtpfile();
-		if(fprintf(_rtpfile,"%s %s",str_utc, s)<0) {
-			reset_rtpprintf();
-		} else if(fflush(_rtpfile)<0) {
-			reset_rtpprintf();
-		}
-		log_unlock();
-	}
+  } else {
+static FILE* fp = NULL;
+fp = (level == TURN_LOG_LEVEL_R) ? _rtpfile_r : _rtpfile; // r
+    log_lock();
+    set_rtpfile();
+//    if(fprintf(_rtpfile,"%s", s)<0) { //r
+if(fprintf(fp,"%s", s)<0) { // r
+      reset_rtpprintf();
+//    } else if(fflush(_rtpfile)<0) { // r
+} else if(fflush(fp)<0) { // r
+      reset_rtpprintf();
+    }
+    log_unlock();
+  }
 
 	return 0;
 }
