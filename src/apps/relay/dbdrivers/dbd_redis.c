@@ -424,8 +424,8 @@ static int redis_get_auth_secrets(secrets_list_t *sl, u08bits *realm)
 	}
 	return ret;
 }
-  
-static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key) {
+
+static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key, u08bits *plan) {
   int ret = -1;
 	redisContext * rc = get_redis_connection();
 	if(rc) {
@@ -447,6 +447,7 @@ static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key) {
 					if(stun_produce_integrity_key_str(usname, realm, (u08bits*)rget->str, key, SHATYPE_DEFAULT)<0){
 						TURN_LOG_FUNC(TURN_LOG_LEVEL_ERROR, "Wrong key: %s, user %s\n",rget->str,usname);
 					} else {
+            STRCPY(plan, "PLAN_ID001");
 						ret = 0;
 					}
 				} else {
@@ -458,7 +459,7 @@ static int redis_get_user_key(u08bits *usname, u08bits *realm, hmackey_t key) {
 					} else {
 						ret = 0;
 					}
-				}				
+				}
 			}
 			turnFreeRedisReply(rget);
 		}
@@ -507,7 +508,7 @@ static int redis_get_oauth_key(const u08bits *kid, oauth_key_data_raw *key) {
   }
   return ret;
 }
-  
+
 static int redis_set_user_key(u08bits *usname, u08bits *realm, const char *key) {
   int ret = -1;
 	redisContext *rc = get_redis_connection();
@@ -534,7 +535,7 @@ static int redis_set_oauth_key(oauth_key_data_raw *key) {
   }
   return ret;
 }
-  
+
 static int redis_del_user(u08bits *usname, u08bits *realm) {
   int ret = -1;
 	redisContext *rc = get_redis_connection();
@@ -563,7 +564,7 @@ static int redis_del_oauth_key(const u08bits *kid) {
   }
   return ret;
 }
-  
+
 static int redis_list_users(u08bits *realm, secrets_list_t *users, secrets_list_t *realms)
 {
 	int ret = -1;
@@ -706,7 +707,7 @@ static int redis_list_oauth_keys(secrets_list_t *kids,secrets_list_t *teas,secre
 
   return ret;
 }
-  
+
 
 static int redis_list_secrets(u08bits *realm, secrets_list_t *secrets, secrets_list_t *realms)
 {
@@ -797,7 +798,7 @@ static int redis_list_secrets(u08bits *realm, secrets_list_t *secrets, secrets_l
 	}
 	return ret;
 }
-  
+
 
 static int redis_del_secret(u08bits *secret, u08bits *realm)
 {
@@ -811,7 +812,7 @@ static int redis_del_secret(u08bits *secret, u08bits *realm)
 	}
 	return ret;
 }
-  
+
 
 static int redis_set_secret(u08bits *secret, u08bits *realm)
 {
@@ -857,7 +858,7 @@ static int redis_set_permission_ip(const char *kind, u08bits *realm, const char*
 	}
 	return ret;
 }
-  
+
 static int redis_add_origin(u08bits *origin, u08bits *realm) {
   int ret = -1;
 	redisContext *rc = get_redis_connection();
@@ -872,7 +873,7 @@ static int redis_add_origin(u08bits *origin, u08bits *realm) {
 	}
   return ret;
 }
-  
+
 static int redis_del_origin(u08bits *origin) {
   int ret = -1;
 	redisContext *rc = get_redis_connection();
@@ -887,7 +888,7 @@ static int redis_del_origin(u08bits *origin) {
 	}
   return ret;
 }
-  
+
 static int redis_list_origins(u08bits *realm, secrets_list_t *origins, secrets_list_t *realms)
 {
 	int ret = -1;
@@ -959,7 +960,7 @@ static int redis_list_origins(u08bits *realm, secrets_list_t *origins, secrets_l
 	}
 	return ret;
 }
-  
+
 static int redis_set_realm_option_one(u08bits *realm, unsigned long value, const char* opt) {
   int ret = -1;
 	redisContext *rc = get_redis_connection();
@@ -977,7 +978,7 @@ static int redis_set_realm_option_one(u08bits *realm, unsigned long value, const
 	}
   return ret;
 }
-  
+
 static int redis_list_realm_options(u08bits *realm) {
   int ret = -1;
 	donot_print_connection_success = 1;
@@ -1042,7 +1043,7 @@ static int redis_list_realm_options(u08bits *realm) {
 	}
   return ret;
 }
-  
+
 static void redis_auth_ping(void * rch) {
 	redisContext *rc = get_redis_connection();
 	if(rc) {
@@ -1051,7 +1052,7 @@ static void redis_auth_ping(void * rch) {
 	if(rch)
 		send_message_to_redis((redis_context_handle)rch, "publish", "__XXX__", "__YYY__");
 }
-  
+
 
 
 static int redis_get_ip_list(const char *kind, ip_range_list_t * list)
@@ -1128,7 +1129,7 @@ static int redis_get_ip_list(const char *kind, ip_range_list_t * list)
 	}
 	return ret;
 }
-  
+
 static void redis_reread_realms(secrets_list_t * realms_list) {
 	redisContext *rc = get_redis_connection();
 	if (rc) {

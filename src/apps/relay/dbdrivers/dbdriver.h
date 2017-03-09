@@ -49,7 +49,7 @@ extern pthread_once_t connection_key_once;
 
 typedef struct _turn_dbdriver_t {
   int (*get_auth_secrets)(secrets_list_t *sl, u08bits *realm);
-  int (*get_user_key)(u08bits *usname, u08bits *realm, hmackey_t key);
+  int (*get_user_key)(u08bits *usname, u08bits *realm, hmackey_t key, u08bits *plan);
   int (*set_user_key)(u08bits *usname, u08bits *realm, const char *key);
   int (*del_user)(u08bits *usname, u08bits *realm);
   int (*list_users)(u08bits *realm, secrets_list_t *users, secrets_list_t *realms);

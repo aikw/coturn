@@ -83,10 +83,13 @@ static inline void log_method(ts_ur_super_session* ss, const char *method, int e
 					  "session %018llu: origin <%s> realm <%s> user <%s>: incoming packet %s processed, error %d: %s\n",
 					  (unsigned long long)(ss->id), (const char*)(ss->origin),(const char*)(ss->realm_options.name),(const char*)(ss->username), method, err_code, reason);
 		  } else {
-			  TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO,
-					  "session %018llu: realm <%s> user <%s>: incoming packet %s processed, error %d: %s\n",
-					  (unsigned long long)(ss->id), (const char*)(ss->realm_options.name),(const char*)(ss->username), method, err_code, reason);
-		  }
+        TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO,
+            "session %018llu: realm <%s> user <%s>: incoming packet %s processed, error %d: %s\n",
+            (unsigned long long)(ss->id), (const char*)(ss->realm_options.name),(const char*)(ss->username), method, err_code, reason);
+        TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO,
+            "session %018llu: plan <%s> realm <%s> user <%s>: incoming packet %s processed, error %d: %s\n",
+            (unsigned long long)(ss->id), (const char*)(ss->plan), (const char*)(ss->realm_options.name),(const char*)(ss->username), method, err_code, reason);
+      }
 	  }
   }
 }
@@ -998,7 +1001,7 @@ static int handle_turn_allocate(turn_turnserver *server,
 		band_limit_t bps = 0;
 		band_limit_t max_bps = 0;
 
-		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh), 
+		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh),
 							    ioa_network_buffer_get_size(in_buffer->nbh));
 		while (sar && (!(*err_code)) && (*ua_num < MAX_NUMBER_OF_UNKNOWN_ATTRS)) {
 
@@ -1172,8 +1175,8 @@ static int handle_turn_allocate(turn_turnserver *server,
 				if(attr_type>=0x0000 && attr_type<=0x7FFF)
 					unknown_attrs[(*ua_num)++] = nswap16(attr_type);
 			};
-			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh), 
-						     ioa_network_buffer_get_size(in_buffer->nbh), 
+			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh),
+						     ioa_network_buffer_get_size(in_buffer->nbh),
 						     sar);
 		}
 
@@ -1182,7 +1185,7 @@ static int handle_turn_allocate(turn_turnserver *server,
 		  *err_code = 400;
 		  if(!(*reason))
 		    *reason = (const u08bits *)"Transport field missed or wrong";
-		  
+
 		} else if (*ua_num > 0) {
 
 		  *err_code = 420;
@@ -1474,7 +1477,7 @@ static int handle_turn_refresh(turn_turnserver *server,
 		mobile_id_t mid = 0;
 		char smid[sizeof(ss->s_mobile_id)] = "\0";
 
-		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh), 
+		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh),
 							    ioa_network_buffer_get_size(in_buffer->nbh));
 		while (sar && (!(*err_code)) && (*ua_num < MAX_NUMBER_OF_UNKNOWN_ATTRS)) {
 			int attr_type = stun_attr_get_type(sar);
@@ -1555,7 +1558,7 @@ static int handle_turn_refresh(turn_turnserver *server,
 				if(attr_type>=0x0000 && attr_type<=0x7FFF)
 					unknown_attrs[(*ua_num)++] = nswap16(attr_type);
 			};
-			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh), 
+			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh),
 						     ioa_network_buffer_get_size(in_buffer->nbh), sar);
 		}
 
@@ -1578,7 +1581,7 @@ static int handle_turn_refresh(turn_turnserver *server,
 					if(server->send_socket_to_relay) {
 						ioa_socket_handle new_s = detach_ioa_socket(ss->client_socket);
 						if(new_s) {
-						  if(server->send_socket_to_relay(tsid, mid, tid, new_s, message_integrity, 
+						  if(server->send_socket_to_relay(tsid, mid, tid, new_s, message_integrity,
 										  RMT_MOBILE_SOCKET, in_buffer, can_resume)<0) {
 						    *err_code = 400;
 						    *reason = (const u08bits *)"Wrong mobile ticket";
@@ -2524,7 +2527,7 @@ static int handle_turn_channel_bind(turn_turnserver *server,
 		*reason = (const u08bits *)"Channel bind cannot be used with TCP relay";
 	} else if (is_allocation_valid(a)) {
 
-		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh), 
+		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh),
 							    ioa_network_buffer_get_size(in_buffer->nbh));
 		while (sar && (!(*err_code)) && (*ua_num < MAX_NUMBER_OF_UNKNOWN_ATTRS)) {
 			int attr_type = stun_attr_get_type(sar);
@@ -2547,8 +2550,8 @@ static int handle_turn_channel_bind(turn_turnserver *server,
 				break;
 			case STUN_ATTRIBUTE_XOR_PEER_ADDRESS:
 			  {
-				stun_attr_get_addr_str(ioa_network_buffer_data(in_buffer->nbh), 
-						       ioa_network_buffer_get_size(in_buffer->nbh), 
+				stun_attr_get_addr_str(ioa_network_buffer_data(in_buffer->nbh),
+						       ioa_network_buffer_get_size(in_buffer->nbh),
 						       sar, &peer_addr,
 						       NULL);
 
@@ -2570,8 +2573,8 @@ static int handle_turn_channel_bind(turn_turnserver *server,
 				if(attr_type>=0x0000 && attr_type<=0x7FFF)
 					unknown_attrs[(*ua_num)++] = nswap16(attr_type);
 			};
-			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh), 
-						     ioa_network_buffer_get_size(in_buffer->nbh), 
+			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh),
+						     ioa_network_buffer_get_size(in_buffer->nbh),
 						     sar);
 		}
 
@@ -2901,7 +2904,7 @@ static int handle_turn_send(turn_turnserver *server, ts_ur_super_session *ss,
 		*reason = (const u08bits *)"Send cannot be used with TCP relay";
 	} else if (is_allocation_valid(a) && (in_buffer->recv_ttl != 0)) {
 
-		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh), 
+		stun_attr_ref sar = stun_attr_get_first_str(ioa_network_buffer_data(in_buffer->nbh),
 							    ioa_network_buffer_get_size(in_buffer->nbh));
 		while (sar && (!(*err_code)) && (*ua_num < MAX_NUMBER_OF_UNKNOWN_ATTRS)) {
 			int attr_type = stun_attr_get_type(sar);
@@ -2918,7 +2921,7 @@ static int handle_turn_send(turn_turnserver *server, ts_ur_super_session *ss,
 					*err_code = 400;
 					*reason = (const u08bits *)"Address duplication";
 				} else {
-					stun_attr_get_addr_str(ioa_network_buffer_data(in_buffer->nbh), 
+					stun_attr_get_addr_str(ioa_network_buffer_data(in_buffer->nbh),
 							       ioa_network_buffer_get_size(in_buffer->nbh),
 							       sar, &peer_addr,
 							       NULL);
@@ -2939,8 +2942,8 @@ static int handle_turn_send(turn_turnserver *server, ts_ur_super_session *ss,
 				if(attr_type>=0x0000 && attr_type<=0x7FFF)
 					unknown_attrs[(*ua_num)++] = nswap16(attr_type);
 			};
-			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh), 
-						     ioa_network_buffer_get_size(in_buffer->nbh), 
+			sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh),
+						     ioa_network_buffer_get_size(in_buffer->nbh),
 						     sar);
 		}
 
@@ -3065,7 +3068,7 @@ static int handle_turn_create_permission(turn_turnserver *server,
 						unknown_attrs[(*ua_num)++] = nswap16(attr_type);
 				};
 				sar = stun_attr_get_next_str(ioa_network_buffer_data(in_buffer->nbh),
-						     ioa_network_buffer_get_size(in_buffer->nbh), 
+						     ioa_network_buffer_get_size(in_buffer->nbh),
 						     sar);
 			}
 		}
@@ -3191,7 +3194,7 @@ static int create_challenge_response(ts_ur_super_session *ss, stun_tid *tid, int
 #define min(a,b) ((a)<=(b) ? (a) : (b))
 #endif
 
-static void resume_processing_after_username_check(int success,  int oauth, int max_session_time, hmackey_t hmackey, password_t pwd, turn_turnserver *server, u64bits ctxkey, ioa_net_data *in_buffer, u08bits *realm)
+static void resume_processing_after_username_check(int success,  int oauth, int max_session_time, hmackey_t hmackey, password_t pwd, turn_turnserver *server, u64bits ctxkey, ioa_net_data *in_buffer, u08bits *realm, u08bits *plan)
 {
 
 	if(server && in_buffer && in_buffer->nbh) {
@@ -3205,12 +3208,13 @@ static void resume_processing_after_username_check(int success,  int oauth, int 
 				ss->hmackey_set = 1;
 				ss->oauth = oauth;
 				ss->max_session_time_auth = (turn_time_t)max_session_time;
-				ns_bcopy(pwd,ss->pwd,sizeof(password_t));
+        ns_bcopy(pwd,ss->pwd,sizeof(password_t));
 				if(realm && realm[0] && strcmp((char*)realm,ss->realm_options.name)) {
 					dec_quota(ss);
 					get_realm_options_by_name((char*)realm, &(ss->realm_options));
 					inc_quota(ss,ss->username);
 				}
+        ns_bcopy(plan,ss->plan,sizeof(ss->plan));
 			}
 
 			read_client_connection(server,ss,in_buffer,0,0);
@@ -3501,16 +3505,16 @@ static int handle_turn_command(turn_turnserver *server, ts_ur_super_session *ss,
 
 	u16bits unknown_attrs[MAX_NUMBER_OF_UNKNOWN_ATTRS];
 	u16bits ua_num = 0;
-	u16bits method = stun_get_method_str(ioa_network_buffer_data(in_buffer->nbh), 
+	u16bits method = stun_get_method_str(ioa_network_buffer_data(in_buffer->nbh),
 					     ioa_network_buffer_get_size(in_buffer->nbh));
 
 	*resp_constructed = 0;
 
-	stun_tid_from_message_str(ioa_network_buffer_data(in_buffer->nbh), 
-				  ioa_network_buffer_get_size(in_buffer->nbh), 
+	stun_tid_from_message_str(ioa_network_buffer_data(in_buffer->nbh),
+				  ioa_network_buffer_get_size(in_buffer->nbh),
 				  &tid);
 
-	if (stun_is_request_str(ioa_network_buffer_data(in_buffer->nbh), 
+	if (stun_is_request_str(ioa_network_buffer_data(in_buffer->nbh),
 				ioa_network_buffer_get_size(in_buffer->nbh))) {
 
 		if((method == STUN_METHOD_BINDING) && (*(server->no_stun))) {
@@ -3784,7 +3788,7 @@ static int handle_turn_command(turn_turnserver *server, ts_ur_super_session *ss,
 			};
 		}
 
-	} else if (stun_is_indication_str(ioa_network_buffer_data(in_buffer->nbh), 
+	} else if (stun_is_indication_str(ioa_network_buffer_data(in_buffer->nbh),
 					  ioa_network_buffer_get_size(in_buffer->nbh))) {
 
 		no_response = 1;
@@ -4421,7 +4425,7 @@ static int read_client_connection(turn_turnserver *server,
 	if (eve(server->verbose)) {
 		TURN_LOG_FUNC(TURN_LOG_LEVEL_INFO,
 			      "%s: data.buffer=0x%lx, data.len=%ld\n", __FUNCTION__,
-			      (long)ioa_network_buffer_data(in_buffer->nbh), 
+			      (long)ioa_network_buffer_data(in_buffer->nbh),
 			      (long)ioa_network_buffer_get_size(in_buffer->nbh));
 	}
 

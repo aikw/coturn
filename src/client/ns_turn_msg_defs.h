@@ -47,6 +47,8 @@
 #define STUN_MAX_PWD_SIZE (256)
 #define AUTH_SECRET_SIZE STUN_MAX_PWD_SIZE
 
+#define R_MAX_PLAN_SIZE (64)
+
 #define STUN_MAGIC_COOKIE (0x2112A442)
 
 #define IS_STUN_REQUEST(msg_type)       (((msg_type) & 0x0110) == 0x0000)

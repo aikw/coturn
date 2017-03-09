@@ -66,7 +66,7 @@ typedef u64bits turnsession_id;
 typedef u64bits mobile_id_t;
 
 struct _ts_ur_super_session {
-  void* server; 
+  void* server;
   turnsession_id id;
   turn_time_t start_time;
   ioa_socket_handle client_socket;
@@ -85,6 +85,7 @@ struct _ts_ur_super_session {
   int quota_used;
   int oauth;
   turn_time_t max_session_time_auth;
+  u08bits plan[R_MAX_PLAN_SIZE+1];
   /* Realm */
   realm_options_t realm_options;
   int origin_set;

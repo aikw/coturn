@@ -84,7 +84,8 @@ struct auth_message {
 	int out_oauth;
 	int max_session_time;
 	u08bits username[STUN_MAX_USERNAME_SIZE + 1];
-	u08bits realm[STUN_MAX_REALM_SIZE + 1];
+  u08bits realm[STUN_MAX_REALM_SIZE + 1];
+  u08bits plan[R_MAX_PLAN_SIZE + 1];
 	hmackey_t key;
 	password_t pwd;
 	get_username_resume_cb resume_func;
@@ -185,7 +186,7 @@ void add_to_secrets_list(secrets_list_t *sl, const char* elem);
 
 /////////// USER DB CHECK //////////////////
 
-int get_user_key(int in_oauth, int *out_oauth, int *max_session_time, u08bits *uname, u08bits *realm, hmackey_t key, ioa_network_buffer_handle nbh);
+int get_user_key(int in_oauth, int *out_oauth, int *max_session_time, u08bits *uname, u08bits *realm, hmackey_t key, ioa_network_buffer_handle nbh, u08bits *plan);
 u08bits *start_user_check(turnserver_id id, turn_credential_type ct, int in_oauth, int *out_oauth, u08bits *uname, u08bits *realm, get_username_resume_cb resume, ioa_net_data *in_buffer, u64bits ctxkey, int *postpone_reply);
 int check_new_allocation_quota(u08bits *username, int oauth, u08bits *realm);
 void release_allocation_quota(u08bits *username, int oauth, u08bits *realm);

@@ -313,7 +313,7 @@ static int get_auth_secrets(secrets_list_t *sl, u08bits *realm)
 		}
 		ret=0;
 	}
-  
+
   if (dbd && dbd->get_auth_secrets) {
     ret = (*dbd->get_auth_secrets)(sl, realm);
   }
@@ -398,7 +398,7 @@ static char *get_real_username(char *usname)
 /*
  * Password retrieval
  */
-int get_user_key(int in_oauth, int *out_oauth, int *max_session_time, u08bits *usname, u08bits *realm, hmackey_t key, ioa_network_buffer_handle nbh)
+int get_user_key(int in_oauth, int *out_oauth, int *max_session_time, u08bits *usname, u08bits *realm, hmackey_t key, ioa_network_buffer_handle nbh, u08bits *plan)
 {
 	int ret = -1;
 
@@ -628,7 +628,7 @@ int get_user_key(int in_oauth, int *out_oauth, int *max_session_time, u08bits *u
 
 	const turn_dbdriver_t * dbd = get_dbdriver();
 	if (dbd && dbd->get_user_key) {
-		ret = (*(dbd->get_user_key))(usname, realm, key);
+		ret = (*(dbd->get_user_key))(usname, realm, key, plan);
 	}
 
 	return ret;

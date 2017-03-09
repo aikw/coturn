@@ -391,31 +391,31 @@ void send_auth_message_to_auth_server(struct auth_message *am)
 static void auth_server_receive_message(struct bufferevent *bev, void *ptr)
 {
   UNUSED_ARG(ptr);
-  
+
   struct auth_message am;
   int n = 0;
   struct evbuffer *input = bufferevent_get_input(bev);
-  
+
   while ((n = evbuffer_remove(input, &am, sizeof(struct auth_message))) > 0) {
     if (n != sizeof(struct auth_message)) {
       fprintf(stderr,"%s: Weird buffer error: size=%d\n",__FUNCTION__,n);
       continue;
     }
-    
+
     {
       hmackey_t key;
-      if(get_user_key(am.in_oauth,&(am.out_oauth),&(am.max_session_time),am.username,am.realm,key,am.in_buffer.nbh)<0) {
+      if(get_user_key(am.in_oauth,&(am.out_oauth),&(am.max_session_time),am.username,am.realm,key,am.in_buffer.nbh,am.plan)<0) {
     	  am.success = 0;
       } else {
     	  ns_bcopy(key,am.key,sizeof(hmackey_t));
     	  am.success = 1;
       }
     }
-    
+
     size_t dest = am.id;
-    
+
     struct evbuffer *output = NULL;
-    
+
     if(dest>=TURNSERVER_ID_BOUNDARY_BETWEEN_TCP_AND_UDP) {
       dest -= TURNSERVER_ID_BOUNDARY_BETWEEN_TCP_AND_UDP;
       if(dest >= get_real_udp_relay_servers_number()) {
@@ -446,7 +446,7 @@ static void auth_server_receive_message(struct bufferevent *bev, void *ptr)
     	  output = bufferevent_get_output(general_relay_servers[dest]->auth_out_buf);
       }
     }
-    
+
     if(output)
       evbuffer_add(output,&am,sizeof(struct auth_message));
     else {
@@ -503,7 +503,7 @@ static int send_socket_to_general_relay(ioa_engine_handle e, struct message_to_r
 	return 0;
 }
 
-static int send_socket_to_relay(turnserver_id id, u64bits cid, stun_tid *tid, ioa_socket_handle s, 
+static int send_socket_to_relay(turnserver_id id, u64bits cid, stun_tid *tid, ioa_socket_handle s,
 				int message_integrity, MESSAGE_TO_RELAY_TYPE rmt, ioa_net_data *nd,
 				int can_resume)
 {
@@ -805,7 +805,7 @@ static int handle_relay_message(relay_server_handle rs, struct message_to_relay 
 static void handle_relay_auth_message(struct relay_server *rs, struct auth_message *am)
 {
 	am->resume_func(am->success, am->out_oauth, am->max_session_time, am->key, am->pwd,
-				&(rs->server), am->ctxkey, &(am->in_buffer), am->realm);
+				&(rs->server), am->ctxkey, &(am->in_buffer), am->realm, am->plan);
 	if (am->in_buffer.nbh) {
 		ioa_network_buffer_delete(rs->ioa_eng, am->in_buffer.nbh);
 		am->in_buffer.nbh = NULL;
@@ -1651,7 +1651,7 @@ static void setup_relay_server(struct relay_server *rs, ioa_engine_handle e, int
 			 send_https_socket,
 			 allocate_bps,
 			 turn_params.oauth, &turn_params.rauth, turn_params.oauth_server_name);
-	
+
 	if(to_set_rfc5780) {
 		set_rfc5780(&(rs->server), get_alt_addr, send_message_from_listener_to_client);
 	}
@@ -1665,7 +1665,7 @@ static void *run_general_relay_thread(void *arg)
 {
   static int always_true = 1;
   struct relay_server *rs = (struct relay_server *)arg;
-  
+
   int udp_reuses_the_same_relay_server = (turn_params.general_relay_servers_number<=1) || (turn_params.net_engine_version == NEV_UDP_SOCKET_PER_THREAD) || (turn_params.net_engine_version == NEV_UDP_SOCKET_PER_SESSION);
 
   int we_need_rfc5780 = udp_reuses_the_same_relay_server && turn_params.rfc5780;
@@ -1679,7 +1679,7 @@ static void *run_general_relay_thread(void *arg)
   while(always_true) {
     run_events(rs->event_base, rs->ioa_eng);
   }
-  
+
   return arg;
 }
 
